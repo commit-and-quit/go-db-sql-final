@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type ParcelStore struct {
@@ -78,32 +77,19 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 
 func (s ParcelStore) SetAddress(number int, address string) error {
 
-	var status string
-	row := s.db.QueryRow("SELECT status FROM parcel WHERE number = :number", sql.Named("number", number))
-	row.Scan(&status)
-	if status != ParcelStatusRegistered {
-		return fmt.Errorf("unable to change address for the parcel with number: %d. status: %s. allowed status to change address is: %s", number, status, ParcelStatusRegistered)
-	}
-	_, err := s.db.Exec("UPDATE parcel SET address = :address where number = :number",
+	_, err := s.db.Exec("UPDATE parcel SET address = :address where number = :number and status = :status",
 		sql.Named("address", address),
-		sql.Named("number", number))
+		sql.Named("number", number),
+		sql.Named("status", ParcelStatusRegistered))
 
 	return err
 }
 
 func (s ParcelStore) Delete(number int) error {
 
-	var status string
-	row := s.db.QueryRow("SELECT status FROM parcel WHERE number = :number", sql.Named("number", number))
-	err := row.Scan(&status)
-	if err != nil {
-		return err
-	}
-	if status != ParcelStatusRegistered {
-		return fmt.Errorf("unable to delete parcel with number: %d. status: %s. allowed status to delete: %s", number, status, ParcelStatusRegistered)
-	}
-	_, err = s.db.Exec("DELETE FROM parcel where number = :number",
-		sql.Named("number", number))
+	_, err := s.db.Exec("DELETE FROM parcel where number = :number and status = :status",
+		sql.Named("number", number),
+		sql.Named("status", ParcelStatusRegistered))
 
 	return err
 }
