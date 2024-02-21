@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -27,10 +26,7 @@ func getTestParcel() Parcel {
 
 func TestAddGetDelete(t *testing.T) {
 	db, err := sql.Open("sqlite", "tracker.db")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -48,15 +44,12 @@ func TestAddGetDelete(t *testing.T) {
 	err = store.Delete(number)
 	require.NoError(t, err)
 	_, err = store.Get(number)
-	require.Equal(t, sql.ErrNoRows, err)
+	require.ErrorIs(t, err, sql.ErrNoRows)
 }
 
 func TestSetAddress(t *testing.T) {
 	db, err := sql.Open("sqlite", "tracker.db")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -78,10 +71,7 @@ func TestSetAddress(t *testing.T) {
 
 func TestSetStatus(t *testing.T) {
 	db, err := sql.Open("sqlite", "tracker.db")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -102,10 +92,7 @@ func TestSetStatus(t *testing.T) {
 
 func TestGetByClient(t *testing.T) {
 	db, err := sql.Open("sqlite", "tracker.db")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	require.NoError(t, err)
 	defer db.Close()
 	store := NewParcelStore(db)
 
@@ -123,11 +110,9 @@ func TestGetByClient(t *testing.T) {
 
 	for i := 0; i < len(parcels); i++ {
 		id, err := store.Add(parcels[i])
-
-		parcels[i].Number = id
-
-		parcelMap[id] = parcels[i]
 		require.NoError(t, err)
+		parcels[i].Number = id
+		parcelMap[id] = parcels[i]
 	}
 
 	storedParcels, err := store.GetByClient(client)

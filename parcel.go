@@ -48,17 +48,22 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 
 	rows, err := s.db.Query("SELECT number, client, status, address, created_at FROM parcel WHERE client = :client", sql.Named("client", client))
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		p := Parcel{}
 		err := rows.Scan(&p.Number, &p.Client, &p.Status, &p.Address, &p.CreatedAt)
 		if err != nil {
-			return res, err
+			return nil, err
 		}
 		res = append(res, p)
 	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
 	return res, nil
 }
 
@@ -75,14 +80,11 @@ func (s ParcelStore) SetAddress(number int, address string) error {
 
 	var status string
 	row := s.db.QueryRow("SELECT status FROM parcel WHERE number = :number", sql.Named("number", number))
-	err := row.Scan(&status)
-	if err != nil {
-		return err
-	}
+	row.Scan(&status)
 	if status != ParcelStatusRegistered {
 		return fmt.Errorf("unable to change address for the parcel with number: %d. status: %s. allowed status to change address is: %s", number, status, ParcelStatusRegistered)
 	}
-	_, err = s.db.Exec("UPDATE parcel SET address = :address where number = :number",
+	_, err := s.db.Exec("UPDATE parcel SET address = :address where number = :number",
 		sql.Named("address", address),
 		sql.Named("number", number))
 
